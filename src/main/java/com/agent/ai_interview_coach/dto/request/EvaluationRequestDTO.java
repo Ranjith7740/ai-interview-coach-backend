@@ -14,4 +14,9 @@ public class EvaluationRequestDTO {
     @NotBlank(message = "Answer must not be blank")
     @Size(min = 5, max = 5000, message = "Answer must be between 5 and 5000 characters")
     private String answer;
+
+    // Phase 2 extension — optional, backward-compatible.
+    // When provided, the interview session is stored with this skill label.
+    @Size(max = 100, message = "Skill must not exceed 100 characters")
+    private String skill;
 }

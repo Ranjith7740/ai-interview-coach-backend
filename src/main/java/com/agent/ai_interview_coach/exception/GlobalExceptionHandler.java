@@ -57,6 +57,28 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
+    // ── Phase 2 exceptions ────────────────────────────────────────────────────
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
+            ResourceNotFoundException ex, HttpServletRequest request) {
+
+        log.warn("Resource not found on [{}]: {}", request.getRequestURI(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(buildError(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage(), request));
+    }
+
+    @ExceptionHandler(GenericApplicationException.class)
+    public ResponseEntity<ErrorResponse> handleGenericApplicationException(
+            GenericApplicationException ex, HttpServletRequest request) {
+
+        log.error("Application error on [{}]: {}", request.getRequestURI(), ex.getMessage(), ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Application Error", ex.getMessage(), request));
+    }
+
+    // ── Catch-all (must remain last) ─────────────────────────────────────────
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex, HttpServletRequest request) {
