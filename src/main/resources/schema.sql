@@ -19,10 +19,10 @@ CREATE TABLE IF NOT EXISTS interview_sessions (
 
     -- user_id BIGINT NULL,  -- reserved: uncomment when multi-user support is added
 
-    CONSTRAINT pk_interview_sessions PRIMARY KEY (id)
-);
+    CONSTRAINT pk_interview_sessions PRIMARY KEY (id),
 
--- Indexes for common query patterns
-CREATE INDEX IF NOT EXISTS idx_is_skill       ON interview_sessions (skill);
-CREATE INDEX IF NOT EXISTS idx_is_created_at  ON interview_sessions (created_at);
-CREATE INDEX IF NOT EXISTS idx_is_score       ON interview_sessions (score);
+    -- Indexes inline (Safest approach for MySQL schema initialization)
+    INDEX idx_is_skill (skill),
+    INDEX idx_is_created_at (created_at),
+    INDEX idx_is_score (score)
+);
