@@ -26,37 +26,36 @@ public class GeminiClient {
      * Sends a prompt to the Gemini generateContent endpoint and returns
      * the raw generated text.  Retries on transient 5xx errors.
      */
-    public String generateContent(String prompt) {
-        log.info("Sending prompt to Gemini model [{}], prompt length={}", geminiProperties.getModel(), prompt.length());
+public String generateContent(String prompt) {
+    log.info("Sending prompt to Gemini model [{}], prompt length={}", geminiProperties.getModel(), prompt.length());
 
-        GeminiRequest requestBody = GeminiRequest.of(prompt);
+    GeminiRequest requestBody = GeminiRequest.of(prompt);
 
-        try {
-            GeminiResponse response = geminiWebClient.post()
-                    .uri(uriBuilder -> uriBuilder
-                            .path(GeminiConstants.GENERATE_CONTENT_PATH)
-                            .queryParam("key", geminiProperties.getKey())
-                            .build(geminiProperties.getModel()))
-                    .bodyValue(requestBody)
-                    .retrieve()
-                    .bodyToMono(GeminiResponse.class)
-                    .retryWhen(Retry.backoff(
-                                    geminiProperties.getRetry().getMaxAttempts(),
-                                    Duration.ofSeconds(geminiProperties.getRetry().getBackoffSeconds()))
-                            .filter(this::isRetryable)
-                            .onRetryExhaustedThrow((spec, signal) ->
-                                    new GeminiApiException("Gemini API unreachable after retries: " + signal.failure().getMessage())))
-                    .block();
+    try {
+        GeminiResponse response = geminiWebClient.post()
+                // Directly pass the fully interpolated base-url from your properties file!
+                .uri(geminiProperties.getBaseUrl()) 
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(GeminiResponse.class)
+                .retryWhen(Retry.backoff(
+                        geminiProperties.getRetry().getMaxAttempts(),
+                        Duration.ofSeconds(geminiProperties.getRetry().getBackoffSeconds()))
+                    .filter(this::isRetryable)
+                    .onRetryExhaustedThrow((spec, signal) ->
+                            new GeminiApiException("Gemini API unreachable after retries: " + signal.failure().getMessage())))
+                .block();
 
-            if (response == null) {
-                throw new GeminiApiException("Gemini returned an empty response");
-            }
+        if (response == null) {
+            throw new GeminiApiException("Gemini returned an empty response");
+        }
 
-            String text = response.extractText();
-            log.info("Gemini responded successfully, response length={}", text.length());
-            return text;
+        String text = response.extractText();
+        log.info("Gemini responded successfully, response length={}", text.length());
+        return text;
 
-        } catch (WebClientResponseException ex) {
+    } catch (WebClientResponseException ex) {
+        // ... rest of your catch blocks remain perfectly unchanged
             log.error("Gemini HTTP error: status={}, body={}", ex.getStatusCode(), ex.getResponseBodyAsString());
             throw new GeminiApiException(
                     String.format("Gemini API error [%s]: %s", ex.getStatusCode(), ex.getResponseBodyAsString()), ex);
